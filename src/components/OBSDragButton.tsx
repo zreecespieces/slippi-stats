@@ -1,7 +1,5 @@
 import styled from "@emotion/styled";
-import React from "react";
-
-import obsImage from "../styles/images/obs.png";
+import React, { useEffect, useState } from "react";
 
 interface OBSLayerOptions {
   "layer-name": string;
@@ -17,43 +15,44 @@ function generateLink(options?: Partial<OBSLayerOptions>): string {
   return location;
 }
 
-const DraggableLink = styled.a`
-  color: #cccccc;
-  border: solid 0.2rem white;
-  background-color: #333333;
-  display: inline-block;
-  text-decoration: none;
-  padding: 1.5rem 3rem;
-  cursor: move;
-  border-radius: 0.3rem;
-  display: flex;
-  align-items: center;
-  text-transform: uppercase;
-  font-weight: bold;
-`;
-
 export const OBSDragButton: React.FC<{ options?: Partial<OBSLayerOptions> }> = (props) => {
-  const wrapperRef = React.useRef(null);
-  const location = generateLink(props.options);
-  const pos = 30;
-  const handleDragStart = (e: any) => {
-    const img = new Image();
-    img.src = obsImage;
-    // Customize the visible 'thumbnail' while dragging
-    e.dataTransfer.setDragImage(img, pos, pos);
-    // Set the data type, and the value. You specifically want text/uri-list.
-    e.dataTransfer.setData("text/uri-list", e.target.href);
-  };
-  const handleDragEnd = (e: any) => e.target.blur();
-  return (
-    <DraggableLink
-      href={location}
-      onDragStart={(e) => handleDragStart(e)}
-      onDragEnd={(e) => handleDragEnd(e)}
-      onClick={(e) => e.preventDefault()}
-      ref={wrapperRef}
-    >
-      <img style={{ width: "3rem", marginRight: "1rem" }} src={obsImage} alt="OBS Logo" /> Drag me into OBS
-    </DraggableLink>
-  );
+  const link = "https://vince.id.au/slippi-stats" + generateLink(props.options).split(":3000")[1];
+  const [image, setImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchShortLink = async () => {
+      const response = await fetch("https://api-ssl.bitly.com/v4/shorten", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer d1dbcf6693e0c2b1d50b655d7047b3c85a4bd0e2",
+        },
+        body: JSON.stringify({
+          domain: "bit.ly",
+          long_url: link,
+        }),
+      });
+      const { link: shortUrl } = await response.json();
+      setImage(
+        `https://api.apiflash.com/v1/urltoimage?access_key=965cc8618cef42b9a6d790639d9acd45&url=${shortUrl}&quality=100&format=jpeg&response_type=image&wait_until=dom_loaded`
+      );
+    };
+
+    fetchShortLink();
+  }, [link]);
+
+  async function downloadImage(imageSrc: string) {
+    const image = await fetch(imageSrc);
+    const imageBlob = await image.blob();
+    const imageURL = URL.createObjectURL(imageBlob);
+
+    const link = document.createElement("a");
+    link.href = imageURL;
+    link.download = "stats";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  return <button onClick={() => downloadImage(image || "")}>Update Stats Image</button>;
 };

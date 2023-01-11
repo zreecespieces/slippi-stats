@@ -92,7 +92,7 @@ export const Options: React.FC = () => {
 
   const charName1 = characterUtil.getCharacterShortName(+char1);
   const charName2 = characterUtil.getCharacterShortName(+char2);
-  const obsLayerName = `Slippi Stats - ${charName1} v ${charName2}`;
+  const obsLayerName = `Slippi_Stats_${charName1}_v_${charName2}`;
 
   const outerRef = React.useRef(null);
 
